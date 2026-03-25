@@ -1,9 +1,9 @@
 from typing import List
-from config import YOUTUBE_CHANNELS
-from scrapers.youtube import YouTubeScraper, ChannelVideo
-from scrapers.openai import OpenAIScraper, OpenAIArticle
-from scrapers.anthropic import AnthropicScraper, AnthropicArticle
-from database.repository import Repository
+from app.config import YOUTUBE_CHANNELS
+from app.scrapers.youtube import YouTubeScraper, ChannelVideo
+from app.scrapers.openai import OpenAIScraper, OpenAIArticle
+from app.scrapers.anthropic import AnthropicScraper, AnthropicArticle
+from app.database.repository import Repository
 
 
 def run_scrapers(hours: int = 24) -> dict:
