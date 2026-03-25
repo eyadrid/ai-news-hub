@@ -1,26 +1,88 @@
 #!/usr/bin/env python3
-"""
-One-time setup script to initialize database tables.
-Run this after setting up Railway PostgreSQL.
-"""
+"""Initialize the PostgreSQL database and create tables."""
 
 import os
 import sys
+from pathlib import Path
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent))
+
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
 
 load_dotenv()
 
-try:
-    from app.database.create_tables import create_all
+def get_base_url() -> str:
+    """Get connection URL without database name."""
+    user = os.getenv("POSTGRES_USER")
+    password = os.getenv("POSTGRES_PASSWORD")
+    host = os.getenv("POSTGRES_HOST")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    return f"postgresql://{user}:{password}@{host}:{port}"
 
-    print("🔧 Initializing database tables...")
-    create_all()
-    print("✅ Database tables created successfully!")
+def get_db_url() -> str:
+    """Get connection URL with database name."""
+    db = os.getenv("POSTGRES_DB")
+    return f"{get_base_url()}/{db}"
 
-except Exception as e:
-    print(f"❌ Error creating tables: {e}")
-    print("\nTroubleshooting:")
-    print("- Check all POSTGRES_* environment variables are set")
-    print("- Verify PostgreSQL database is running")
-    print("- Ensure database credentials are correct")
-    sys.exit(1)
+def create_database():
+    """Create the database if it doesn't exist."""
+    db_name = os.getenv("POSTGRES_DB")
+    base_url = get_base_url()
+
+    print(f"Connecting to PostgreSQL server...")
+    engine = create_engine(base_url)
+
+    try:
+        with engine.connect() as conn:
+            # Check if database exists
+            result = conn.execute(
+                text(f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'")
+            )
+            if result.fetchone():
+                print(f"✓ Database '{db_name}' already exists")
+                return True
+
+            # Create database
+            conn.execute(text(f"CREATE DATABASE \"{db_name}\""))
+            conn.commit()
+            print(f"✓ Created database '{db_name}'")
+            return True
+    except Exception as e:
+        print(f"✗ Error creating database: {e}")
+        return False
+    finally:
+        engine.dispose()
+
+def create_tables():
+    """Create all tables in the database."""
+    print(f"Creating tables...")
+    from app.database.models import Base
+    from sqlalchemy import create_engine
+
+    engine = create_engine(get_db_url())
+    try:
+        Base.metadata.create_all(engine)
+        print("✓ Tables created successfully")
+        return True
+    except Exception as e:
+        print(f"✗ Error creating tables: {e}")
+        return False
+    finally:
+        engine.dispose()
+
+if __name__ == "__main__":
+    print("=" * 50)
+    print("Database Initialization")
+    print("=" * 50)
+
+    if not create_database():
+        sys.exit(1)
+
+    if not create_tables():
+        sys.exit(1)
+
+    print("=" * 50)
+    print("✓ Setup complete!")
+    print("=" * 50)
