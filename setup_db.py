@@ -15,6 +15,13 @@ load_dotenv()
 
 def get_base_url() -> str:
     """Get connection URL without database name."""
+    # Check for full DATABASE_URL first (preferred for deployment)
+    if os.getenv("DATABASE_URL"):
+        # Remove database name from full URL
+        db_url = os.getenv("DATABASE_URL")
+        return db_url.rsplit("/", 1)[0]
+
+    # Fall back to individual components (for local development)
     user = os.getenv("POSTGRES_USER")
     password = os.getenv("POSTGRES_PASSWORD")
     host = os.getenv("POSTGRES_HOST")
@@ -23,13 +30,24 @@ def get_base_url() -> str:
 
 def get_db_url() -> str:
     """Get connection URL with database name."""
+    # Check for full DATABASE_URL first (preferred for deployment)
+    if os.getenv("DATABASE_URL"):
+        return os.getenv("DATABASE_URL")
+
+    # Fall back to individual components (for local development)
     db = os.getenv("POSTGRES_DB")
     return f"{get_base_url()}/{db}"
 
 def create_database():
     """Create the database if it doesn't exist."""
-    db_name = os.getenv("POSTGRES_DB")
     base_url = get_base_url()
+    db_url = os.getenv("DATABASE_URL")
+
+    # Extract database name from DATABASE_URL or env var
+    if db_url:
+        db_name = db_url.rsplit("/", 1)[-1]
+    else:
+        db_name = os.getenv("POSTGRES_DB")
 
     print(f"Connecting to PostgreSQL server...")
     engine = create_engine(base_url)
