@@ -1,9 +1,9 @@
 import os
 from typing import List
 import json
-from groq import Groq
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
+from app.agent.base import BaseAgent
 
 load_dotenv()
 
@@ -43,15 +43,9 @@ Always respond with valid JSON in this format:
 {"articles": [{"digest_id": "...", "relevance_score": 8.5, "rank": 1, "reasoning": "..."}]}"""
 
 
-class CuratorAgent:
+class CuratorAgent(BaseAgent):
     def __init__(self, user_profile: dict):
-        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-        self.model = os.getenv("GROQ_CURATOR_MODEL", "llama-3.1-8b-instant")
-        self.fallback_models = [
-            self.model,
-            "llama-3.3-70b-versatile",
-            "llama-3.1-8b-instant",
-        ]
+        super().__init__(model_env_key="GROQ_CURATOR_MODEL", default_model="llama-3.1-8b-instant")
         self.user_profile = user_profile
         self.system_prompt = self._build_system_prompt()
 

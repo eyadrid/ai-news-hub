@@ -2,9 +2,9 @@ import os
 import json
 from datetime import datetime
 from typing import List, Optional
-from groq import Groq
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
+from app.agent.base import BaseAgent
 
 load_dotenv()
 
@@ -62,15 +62,9 @@ Your role is to write a warm, professional introduction for a daily AI news dige
 Keep it concise (2-3 sentences for the introduction), friendly, and professional."""
 
 
-class EmailAgent:
+class EmailAgent(BaseAgent):
     def __init__(self, user_profile: dict):
-        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-        self.model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
-        self.fallback_models = [
-            self.model,
-            "llama-3.3-70b-versatile",
-            "llama-3.1-8b-instant",
-        ]
+        super().__init__(model_env_key="GROQ_MODEL", default_model="llama-3.1-8b-instant")
         self.user_profile = user_profile
 
     def generate_introduction(self, ranked_articles: List) -> EmailIntroduction:

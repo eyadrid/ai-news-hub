@@ -1,9 +1,9 @@
 import os
 from typing import Optional
 import json
-from groq import Groq
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from app.agent.base import BaseAgent
 
 load_dotenv()
 
@@ -27,15 +27,9 @@ Always respond with valid JSON in this format:
 {"title": "...", "summary": "..."}"""
 
 
-class DigestAgent:
+class DigestAgent(BaseAgent):
     def __init__(self):
-        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-        self.model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
-        self.fallback_models = [
-            self.model,
-            "llama-3.3-70b-versatile",
-            "llama-3.1-8b-instant",
-        ]
+        super().__init__(model_env_key="GROQ_MODEL", default_model="llama-3.1-8b-instant")
         self.system_prompt = PROMPT
 
     def generate_digest(self, title: str, content: str, article_type: str) -> Optional[DigestOutput]:
